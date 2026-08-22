@@ -806,6 +806,22 @@ function Admin() {
 
                 </div>
 
+                {/* Display Student Name and Roll ID */}
+                {(item.student_name || item.student_roll_id) && (
+                  <div style={{ marginTop: "12px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    {item.student_name && (
+                      <span className="category-badge" style={{ margin: 0, textTransform: "none", background: "rgba(63, 140, 255, 0.15)", color: "#3f8cff" }}>
+                        👤 {item.student_name}
+                      </span>
+                    )}
+                    {item.student_roll_id && (
+                      <span className="category-badge" style={{ margin: 0, textTransform: "none", background: "rgba(108, 44, 255, 0.15)", color: "#6c2cff" }}>
+                        🆔 {item.student_roll_id}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <p style={{ marginTop: "15px" }}>
                   {item.text}
                 </p>

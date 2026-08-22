@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-function Queries() {
+function Queries({ session, profile }) {
   const [query, setQuery] = useState("");
   const [queries, setQueries] = useState([]);
 
   // Load queries from Supabase
   useEffect(() => {
     const loadQueries = async () => {
+      if (!session?.user) return;
       try {
         const { data, error } = await supabase
           .from("queries")
           .select("*")
+          .eq("student_id", session.user.id)
           .order("id", { ascending: false });
 
         if (error) throw error;
@@ -22,7 +24,7 @@ function Queries() {
     };
 
     loadQueries();
-  }, []);
+  }, [session]);
 
   // Submit query to Supabase
   const submitQuery = async () => {
@@ -36,7 +38,16 @@ function Queries() {
 
       const { data, error } = await supabase
         .from("queries")
-        .insert([{ text: query.trim(), status: "Pending", date }])
+        .insert([
+          { 
+            text: query.trim(), 
+            status: "Pending", 
+            date,
+            student_id: session.user.id,
+            student_name: profile?.name || session.user.email,
+            student_roll_id: profile?.roll_id || "N/A"
+          }
+        ])
         .select();
 
       if (error) throw error;
