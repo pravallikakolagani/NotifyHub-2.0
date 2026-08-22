@@ -1,22 +1,30 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
 function Queries() {
   const [query, setQuery] = useState("");
   const [queries, setQueries] = useState([]);
 
-  // Load queries from Neon
+  // Load queries from Supabase
   useEffect(() => {
-    fetch("http://localhost:5000/api/queries")
-      .then((response) => response.json())
-      .then((data) => {
-        setQueries(data);
-      })
-      .catch((error) => {
+    const loadQueries = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("queries")
+          .select("*")
+          .order("id", { ascending: false });
+
+        if (error) throw error;
+        setQueries(data || []);
+      } catch (error) {
         console.error("Failed to load queries:", error);
-      });
+      }
+    };
+
+    loadQueries();
   }, []);
 
-  // Submit query to Neon
+  // Submit query to Supabase
   const submitQuery = async () => {
     if (!query.trim()) {
       alert("Please enter your query.");
@@ -24,35 +32,24 @@ function Queries() {
     }
 
     try {
-      const response = await fetch(
-        "https://notify-hub-a5mm.vercel.app/api/queries",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: query,
-          }),
-        }
-      );
+      const date = new Date().toLocaleDateString();
 
-      const data = await response.json();
+      const { data, error } = await supabase
+        .from("queries")
+        .insert([{ text: query.trim(), status: "Pending", date }])
+        .select();
 
-      if (!response.ok) {
-        alert(data.message || "Failed to submit query");
-        return;
-      }
+      if (error) throw error;
 
       // Add the new query to the screen
-      setQueries((previous) => [data, ...previous]);
+      setQueries((previous) => [data[0], ...previous]);
 
       setQuery("");
 
       alert("Query submitted successfully!");
     } catch (error) {
       console.error(error);
-      alert("Cannot connect to the backend.");
+      alert("Failed to submit query: " + error.message);
     }
   };
 

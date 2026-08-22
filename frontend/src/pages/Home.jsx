@@ -1,27 +1,38 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
 function Home() {
   const [announcements, setAnnouncements] = useState([]);
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/announcements")
-      .then((response) => response.json())
-      .then((data) => {
-        setAnnouncements(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => {
-        console.error("Failed to load announcements:", error);
-      });
+    const fetchData = async () => {
+      try {
+        const { data: announcementData, error: annError } = await supabase
+          .from("announcements")
+          .select("*")
+          .order("id", { ascending: false });
 
-    fetch("http://localhost:5000/api/events")
-      .then((response) => response.json())
-      .then((data) => {
-        setEvents(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => {
+        if (annError) throw annError;
+        setAnnouncements(announcementData || []);
+      } catch (error) {
+        console.error("Failed to load announcements:", error);
+      }
+
+      try {
+        const { data: eventData, error: eventError } = await supabase
+          .from("events")
+          .select("*")
+          .order("id", { ascending: false });
+
+        if (eventError) throw eventError;
+        setEvents(eventData || []);
+      } catch (error) {
         console.error("Failed to load events:", error);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const latestAnnouncement = announcements[0];

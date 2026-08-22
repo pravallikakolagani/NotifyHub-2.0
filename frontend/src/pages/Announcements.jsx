@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
 function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("https://notify-hub-a5mm.vercel.app/api/announcements")
-      .then((response) => response.json())
-      .then((data) => {
-        setAnnouncements(data);
-      })
-      .catch((error) => {
+    const loadAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("*")
+          .order("id", { ascending: false });
+
+        if (error) throw error;
+        setAnnouncements(data || []);
+      } catch (error) {
         console.error("Failed to load announcements:", error);
-      });
+      }
+    };
+
+    loadAnnouncements();
   }, []);
 
   const filteredAnnouncements = announcements.filter((item) =>

@@ -1,9 +1,12 @@
 {
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "react-router-dom": "^7.18.2"
   },
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.5",

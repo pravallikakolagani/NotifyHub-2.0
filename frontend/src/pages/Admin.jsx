@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
 function Admin() {
   // =========================
@@ -38,15 +39,13 @@ function Admin() {
 
   const loadAnnouncements = async () => {
     try {
-      const response = await fetch(
-        "https://notify-hub-a5mm.vercel.app/api/announcements"
-      );
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .order("id", { ascending: false });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setAnnouncements(data);
-      }
+      if (error) throw error;
+      setAnnouncements(data || []);
     } catch (error) {
       console.error("Failed to load announcements:", error);
     }
@@ -58,15 +57,13 @@ function Admin() {
 
   const loadEvents = async () => {
     try {
-      const response = await fetch(
-        "https://notify-hub-a5mm.vercel.app/api/events"
-      );
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("id", { ascending: false });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setEvents(data);
-      }
+      if (error) throw error;
+      setEvents(data || []);
     } catch (error) {
       console.error("Failed to load events:", error);
     }
@@ -78,15 +75,13 @@ function Admin() {
 
   const loadQueries = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/queries"
-      );
+      const { data, error } = await supabase
+        .from("queries")
+        .select("*")
+        .order("id", { ascending: false });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setQueries(data);
-      }
+      if (error) throw error;
+      setQueries(data || []);
     } catch (error) {
       console.error("Failed to load queries:", error);
     }
@@ -117,52 +112,23 @@ function Admin() {
     }
 
     try {
-      let response;
-
       if (editingAnnouncementId) {
         // EDIT
-        response = await fetch(
-          `http://localhost:5000/api/announcements/${editingAnnouncementId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title,
-              category,
-              description,
-            }),
-          }
-        );
-      } else {
-        // ADD
-        response = await fetch(
-          "http://localhost:5000/api/announcements",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title,
-              category,
-              description,
-            }),
-          }
-        );
-      }
+        const { error } = await supabase
+          .from("announcements")
+          .update({ title, category, description })
+          .eq("id", editingAnnouncementId);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Something went wrong");
-        return;
-      }
-
-      if (editingAnnouncementId) {
+        if (error) throw error;
         alert("Announcement updated successfully!");
       } else {
+        // ADD
+        const date = new Date().toLocaleDateString();
+        const { error } = await supabase
+          .from("announcements")
+          .insert([{ title, category, description, date }]);
+
+        if (error) throw error;
         alert("Announcement added successfully!");
       }
 
@@ -176,7 +142,7 @@ function Admin() {
       loadAnnouncements();
     } catch (error) {
       console.error(error);
-      alert("Cannot connect to the backend.");
+      alert("Failed to save announcement: " + error.message);
     }
   };
 
@@ -210,26 +176,19 @@ function Admin() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/announcements/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const { error } = await supabase
+        .from("announcements")
+        .delete()
+        .eq("id", id);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to delete announcement");
-        return;
-      }
+      if (error) throw error;
 
       alert("Announcement deleted successfully!");
 
       loadAnnouncements();
     } catch (error) {
       console.error(error);
-      alert("Cannot connect to the backend.");
+      alert("Failed to delete announcement: " + error.message);
     }
   };
 
@@ -264,58 +223,31 @@ function Admin() {
     }
 
     try {
-      let response;
+      const eventPayload = {
+        title: eventTitle,
+        category: eventCategory,
+        description: eventDescription,
+        date: eventDate,
+        time: eventTime,
+        location: eventLocation,
+      };
 
       if (editingEventId) {
         // EDIT
-        response = await fetch(
-          `http://localhost:5000/api/events/${editingEventId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: eventTitle,
-              category: eventCategory,
-              description: eventDescription,
-              date: eventDate,
-              time: eventTime,
-              location: eventLocation,
-            }),
-          }
-        );
-      } else {
-        // ADD
-        response = await fetch(
-          "http://localhost:5000/api/events",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: eventTitle,
-              category: eventCategory,
-              description: eventDescription,
-              date: eventDate,
-              time: eventTime,
-              location: eventLocation,
-            }),
-          }
-        );
-      }
+        const { error } = await supabase
+          .from("events")
+          .update(eventPayload)
+          .eq("id", editingEventId);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Something went wrong");
-        return;
-      }
-
-      if (editingEventId) {
+        if (error) throw error;
         alert("Event updated successfully!");
       } else {
+        // ADD
+        const { error } = await supabase
+          .from("events")
+          .insert([eventPayload]);
+
+        if (error) throw error;
         alert("Event added successfully!");
       }
 
@@ -332,7 +264,7 @@ function Admin() {
       loadEvents();
     } catch (error) {
       console.error(error);
-      alert("Cannot connect to the backend.");
+      alert("Failed to save event: " + error.message);
     }
   };
 
@@ -370,26 +302,19 @@ function Admin() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/events/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", id);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to delete event");
-        return;
-      }
+      if (error) throw error;
 
       alert("Event deleted successfully!");
 
       loadEvents();
     } catch (error) {
       console.error(error);
-      alert("Cannot connect to the backend.");
+      alert("Failed to delete event: " + error.message);
     }
   };
 

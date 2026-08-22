@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
 function Events() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    fetch("https://notify-hub-a5mm.vercel.app/api/events")
-      .then((response) => response.json())
-      .then((data) => {
-        setEvents(data);
-      })
-      .catch((error) => {
+    const loadEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select("*")
+          .order("id", { ascending: false });
+
+        if (error) throw error;
+        setEvents(data || []);
+      } catch (error) {
         console.error("Failed to load events:", error);
-      });
+      }
+    };
+
+    loadEvents();
   }, []);
 
   return (
